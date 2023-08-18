@@ -1,4 +1,11 @@
 class AwtrixLightLiveCard extends HTMLElement {
+  constructor() {
+    super();
+    this.retries = 0;
+    this.maxRetries = 5;
+    this.initialDelay = 500;  // Starting from 500ms
+  }
+
   set hass(hass) {
     if (!this.content) {
       this.innerHTML = `
@@ -32,35 +39,37 @@ class AwtrixLightLiveCard extends HTMLElement {
     // Get the card configuration options
     const ipAddress = this.config.ipAddress;
     const resolution = this.config.resolution;
-    const captureRate = this.config.captureRate || 1000;
-    const borderWidth = this.config.borderWidth || 1;
 
     if (ipAddress && resolution) {
-      const endpointUrl = "https://" + ipAddress + "/screen/awtrix2";
-
-      this.fetchAndDisplay(endpointUrl, resolution, borderWidth);
-      setInterval(() => {
-        this.fetchAndDisplay(endpointUrl, resolution, borderWidth);
-      }, captureRate);
+      this.endpointUrl = "https://" + ipAddress + "/api/screen";
+      this.resolution = resolution;
+      this.borderWidth = this.config.borderWidth || 1;
+      this.fetchWithBackoff();
     } else {
       console.error("Missing IP address or resolution parameters.");
     }
   }
 
-  fetchAndDisplay(endpointUrl, resolution, borderWidth) {
-    fetch(endpointUrl)
+  fetchWithBackoff() {
+    fetch(this.endpointUrl)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
+        this.retries = 0; // reset retries if successful
         return response.json();
       })
       .then((pixelData) => {
-        this.createSvgElement(resolution, pixelData, borderWidth);
+        this.createSvgElement(this.resolution, pixelData, this.borderWidth);
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
-        this.showError("NO DATA");
+        if (this.retries < this.maxRetries) {
+          this.retries++;
+          setTimeout(() => this.fetchWithBackoff(), this.initialDelay * Math.pow(2, this.retries));
+        } else {
+          this.showError("NO DATA");
+        }
       });
   }
 
