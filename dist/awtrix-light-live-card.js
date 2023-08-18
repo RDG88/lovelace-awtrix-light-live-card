@@ -36,7 +36,7 @@ class AwtrixLightLiveCard extends HTMLElement {
       const borderWidth = this.config.borderWidth || 1;
   
       if (ipAddress && resolution) {
-        const endpointUrl = "https://" + ipAddress + "/screen/ulanzi3";
+        const endpointUrl = "https://" + ipAddress + "/api/screen";
   
         this.fetchAndDisplay(endpointUrl, resolution, borderWidth);
         setInterval(() => {
