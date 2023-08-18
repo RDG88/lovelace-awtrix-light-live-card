@@ -6,6 +6,17 @@ class AwtrixLightLiveCard extends HTMLElement {
         this.initialDelay = 500;  // Starting from 500ms
     }
 
+    setConfig(config) {
+        this.config = {
+            resolution: '256x64',
+            matrix_padding: 1,
+            border_radius: 10,
+            border_width: 3,
+            border_color: 'white',
+            ...config,
+        };
+    }
+
     set hass(hass) {
         if (!this.content) {
             this.innerHTML = `
@@ -42,7 +53,6 @@ class AwtrixLightLiveCard extends HTMLElement {
         if (ipAddress && resolution) {
             this.endpointUrl = "https://" + ipAddress + "/api/screen";
             this.resolution = resolution;
-            this.borderWidth = this.config.borderWidth || 1;
             this.fetchWithBackoff();
         } else {
             console.error("Missing IP address or resolution parameters.");
@@ -59,7 +69,7 @@ class AwtrixLightLiveCard extends HTMLElement {
                 return response.json();
             })
             .then(pixelData => {
-                this.createSvgElement(this.resolution, pixelData, this.borderWidth);
+                this.createSvgElement(pixelData);
             })
             .catch(error => {
                 console.error("Error fetching data:", error);
@@ -90,13 +100,8 @@ class AwtrixLightLiveCard extends HTMLElement {
     ];
         this.createSvgElement(this.resolution, pictureData, this.borderWidth);
     }
-
-    createSvgElement(resolution, pixelData, borderWidth) {
-        if (!pixelData || !Array.isArray(pixelData)) {
-            this.showError();
-            return;
-        }
-        const resolutionParts = resolution.split("x");
+  createSvgElement(pixelData) {
+        const resolutionParts = this.config.resolution.split("x");
         const width = parseInt(resolutionParts[0]);
         const height = parseInt(resolutionParts[1]);
 
@@ -111,8 +116,20 @@ class AwtrixLightLiveCard extends HTMLElement {
         svgElement.style.width = '100%';
         svgElement.style.height = '100%';
 
-        const cornerRadius = parseInt(this.config.borderradius) || 10;
-        svgElement.style.borderRadius = `${cornerRadius}px`;
+        const cornerRadius = parseInt(this.config.border_radius);
+        const matrixPadding = parseInt(this.config.matrix_padding);
+        const borderWidth = parseInt(this.config.border_width);
+        const borderColor = this.config.border_color;
+
+        if (cornerRadius > 0) {
+            svgElement.style.borderRadius = `${cornerRadius}px`;
+        }
+
+        if (borderWidth > 0) {
+            svgElement.style.border = `${borderWidth}px solid ${borderColor}`;
+        }
+
+        svgElement.style.boxSizing = "border-box";
 
         for (let y = 0; y < 8; y++) {
             for (let x = 0; x < 32; x++) {
@@ -127,8 +144,11 @@ class AwtrixLightLiveCard extends HTMLElement {
                 svgPixel.setAttribute("width", scaleX);
                 svgPixel.setAttribute("height", scaleY);
                 svgPixel.setAttribute("fill", `rgb(${red}, ${green}, ${blue})`);
-                svgPixel.setAttribute("stroke", "black");
-                svgPixel.setAttribute("stroke-width", borderWidth);
+
+                if (matrixPadding > 0) {
+                    svgPixel.setAttribute("stroke", "black");
+                    svgPixel.setAttribute("stroke-width", matrixPadding);
+                }
 
                 svgElement.appendChild(svgPixel);
             }
@@ -136,10 +156,6 @@ class AwtrixLightLiveCard extends HTMLElement {
 
         this.content.innerHTML = "";
         this.content.appendChild(svgElement);
-    }
-
-    setConfig(config) {
-        this.config = config;
     }
 
     getCardSize() {
