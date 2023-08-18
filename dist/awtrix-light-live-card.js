@@ -3,7 +3,7 @@ class AwtrixLightLiveCard extends HTMLElement {
         super();
         this.retries = 0;
         this.maxRetries = 5;
-        this.initialDelay = 500;  // Starting from 500ms
+        this.initialDelay = 1000;  // Starting from 500ms
     }
 
     setConfig(config) {
