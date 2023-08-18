@@ -32,7 +32,7 @@ class AwtrixLightLiveCard extends HTMLElement {
       // Get the card configuration options
       const ipAddress = this.config.ipAddress;
       const resolution = this.config.resolution;
-      const captureRate = this.config.captureRate || 100;
+      const captureRate = this.config.captureRate || 1000;
       const borderWidth = this.config.borderWidth || 1;
   
       if (ipAddress && resolution) {
