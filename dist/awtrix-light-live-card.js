@@ -4,7 +4,7 @@ class AwtrixLightLiveCard extends HTMLElement {
         this.retries = 0;
         this.maxRetries = 5;
         this.initialDelay = 1000;  // Starting from 500ms
-        this.captureRate = 1000;  // Default capture rate
+        this.captureRate = 10000;  // Default capture rate
     }
 
     setConfig(config) {
@@ -16,7 +16,9 @@ class AwtrixLightLiveCard extends HTMLElement {
             border_color: 'white',
             ...config,
         };
-        this.captureRate = config.captureRate || 1000;
+    if (this.config.captureRate) {
+        this.captureRate = this.config.captureRate;  // Override the default capture rate if provided
+    }
     }
 
     set hass(hass) {
