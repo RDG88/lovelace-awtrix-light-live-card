@@ -71,18 +71,20 @@ fetchWithBackoff() {
         })
         .then(pixelData => {
             this.createSvgElement(pixelData);
-            setTimeout(() => this.fetchWithBackoff(), this.captureRate);  // Schedule the next fetch
         })
         .catch(error => {
             console.error("Error fetching data:", error);
             if (this.retries < this.maxRetries) {
                 this.retries++;
-                setTimeout(() => this.fetchWithBackoff(), this.initialDelay * Math.pow(2, this.retries));
             } else {
                 this.showError();
             }
+        })
+        .finally(() => {
+            setTimeout(() => this.fetchWithBackoff(), this.captureRate); // Always schedule the next fetch using the capture rate
         });
 }
+
 
     showError() {
     const pictureData = [
