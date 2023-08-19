@@ -4,6 +4,7 @@ class AwtrixLightLiveCard extends HTMLElement {
         this.retries = 0;
         this.maxRetries = 5;
         this.initialDelay = 1000;  // Starting from 500ms
+        this.captureRate = 1000;  // Default capture rate
     }
 
     setConfig(config) {
@@ -15,6 +16,7 @@ class AwtrixLightLiveCard extends HTMLElement {
             border_color: 'white',
             ...config,
         };
+        this.captureRate = config.captureRate || 1000;
     }
 
     set hass(hass) {
@@ -58,29 +60,29 @@ class AwtrixLightLiveCard extends HTMLElement {
             console.error("Missing IP address or resolution parameters.");
         }
     }
-
-    fetchWithBackoff() {
-        fetch(this.endpointUrl)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Network response was not ok");
-                }
-                this.retries = 0;
-                return response.json();
-            })
-            .then(pixelData => {
-                this.createSvgElement(pixelData);
-            })
-            .catch(error => {
-                console.error("Error fetching data:", error);
-                if (this.retries < this.maxRetries) {
-                    this.retries++;
-                    setTimeout(() => this.fetchWithBackoff(), this.initialDelay * Math.pow(2, this.retries));
-                } else {
-                    this.showError();
-                }
-            });
-    }
+fetchWithBackoff() {
+    fetch(this.endpointUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+            this.retries = 0;
+            return response.json();
+        })
+        .then(pixelData => {
+            this.createSvgElement(pixelData);
+            setTimeout(() => this.fetchWithBackoff(), this.captureRate);  // Schedule the next fetch
+        })
+        .catch(error => {
+            console.error("Error fetching data:", error);
+            if (this.retries < this.maxRetries) {
+                this.retries++;
+                setTimeout(() => this.fetchWithBackoff(), this.initialDelay * Math.pow(2, this.retries));
+            } else {
+                this.showError();
+            }
+        });
+}
 
     showError() {
     const pictureData = [
